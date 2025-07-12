@@ -1,0 +1,12 @@
+streamlit
+pandas
+requests
+beautifulsoup4
+openpyxl
+pydantic
+langchain
+langchain-openai
+openai
+python-dotenv
+langchain_community
+PyPDF2
