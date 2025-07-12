@@ -74,13 +74,5 @@ Thumbs.db
 
 # Sentry debug
 sentry-debug/
-
-# Project specific: generated or large data
-# Batch sample data (raw input)
-data/batch/
-# Auto-generated analysis and temp outputs
-data/format/temp/
-updated_*.xlsx
-
 # Streamlit specific
 .streamlit/config.toml 

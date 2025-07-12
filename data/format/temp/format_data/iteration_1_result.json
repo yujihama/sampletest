@@ -1,0 +1,166 @@
+{
+  "iteration": 1,
+  "fields": [
+    {
+      "cell_id": "C3",
+      "key_name": "test_name",
+      "description": "この監査テストの名称を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C4",
+      "key_name": "execution_date",
+      "description": "テストの実施日を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C5",
+      "key_name": "auditor_name",
+      "description": "監査の実施者（担当者）の氏名を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C6",
+      "key_name": "target_period",
+      "description": "監査対象の期間を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C7",
+      "key_name": "population",
+      "description": "母集団の情報を記入する欄（例：全取引件数など）",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C8",
+      "key_name": "sample_size",
+      "description": "サンプルサイズ（抽出件数）を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C9",
+      "key_name": "sampling_method",
+      "description": "サンプリング方法の説明を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C12",
+      "key_name": "test_procedure_1",
+      "description": "テスト手続き1の内容を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C13",
+      "key_name": "test_procedure_2",
+      "description": "テスト手続き2の内容を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C14",
+      "key_name": "test_procedure_3",
+      "description": "テスト手続き3の内容を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C17",
+      "key_name": "sample_id_1",
+      "description": "サンプル1のIDを記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "C18",
+      "key_name": "sample_id_2",
+      "description": "サンプル2のIDを記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "C19",
+      "key_name": "sample_id_3",
+      "description": "サンプル3のIDを記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "D17",
+      "key_name": "test_result_1",
+      "description": "サンプル1に対するテスト手続きNo.1の結果を記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "D18",
+      "key_name": "test_result_2",
+      "description": "サンプル2に対するテスト手続きNo.1の結果を記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "D19",
+      "key_name": "test_result_3",
+      "description": "サンプル3に対するテスト手続きNo.1の結果を記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "G17",
+      "key_name": "note_1",
+      "description": "サンプル1に関する備考を記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "G18",
+      "key_name": "note_2",
+      "description": "サンプル2に関する備考を記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "G19",
+      "key_name": "note_3",
+      "description": "サンプル3に関する備考を記入する欄",
+      "field_type": "sample"
+    },
+    {
+      "cell_id": "C21",
+      "key_name": "findings",
+      "description": "監査で発見された事項を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C22",
+      "key_name": "conclusion",
+      "description": "監査の結論を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C23",
+      "key_name": "recommendations",
+      "description": "監査の推奨事項を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C26",
+      "key_name": "reporter_name",
+      "description": "報告者の氏名を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "D26",
+      "key_name": "reporter_date",
+      "description": "報告者の記入日を記載する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "C27",
+      "key_name": "reviewer_name",
+      "description": "レビューアーの氏名を記入する欄",
+      "field_type": "common"
+    },
+    {
+      "cell_id": "D27",
+      "key_name": "reviewer_date",
+      "description": "レビューアーの記入日を記載する欄",
+      "field_type": "common"
+    }
+  ],
+  "validation": {
+    "status": "OK",
+    "issues": null,
+    "suggestions": null
+  }
+}
