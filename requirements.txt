@@ -10,3 +10,4 @@ openai
 python-dotenv
 langchain_community
 PyPDF2
+pdf2image

@@ -91,19 +91,41 @@ def list_templates():
     return sorted([p.name for p in FORMAT_DIR.iterdir() if p.is_file()])
 
 
-def read_sample(file_path: Path) -> Union[str, Dict[str, str]]:
+def read_sample(file_path: Path) -> Union[str, Dict[str, str], List[Union[str, Dict[str, str]]]]:
     """サンプルファイルを読み取りテキスト化、または画像をbase64エンコード"""
     suffix = file_path.suffix.lower()
     try:
         if suffix in [".txt", ".csv"]:
             return file_path.read_text(encoding="utf-8", errors="ignore")
         elif suffix == ".pdf" and PyPDF2:
-            text = []
+            try:
+                from pdf2image import convert_from_path
+            except Exception:
+                convert_from_path = None
+
+            contents: List[Union[str, Dict[str, str]]] = []
             with open(file_path, "rb") as f:
                 reader = PyPDF2.PdfReader(f)  # type: ignore
-                for page in reader.pages:
-                    text.append(page.extract_text() or "")  # type: ignore
-            return "\n".join(text)
+                for page_num, page in enumerate(reader.pages, start=1):
+                    page_text = page.extract_text() or ""  # type: ignore
+                    if page_text.strip():
+                        contents.append(page_text)
+                    else:
+                        if convert_from_path:
+                            try:
+                                images = convert_from_path(
+                                    file_path, first_page=page_num, last_page=page_num, fmt="png"
+                                )
+                                if images:
+                                    buffer = BytesIO()
+                                    images[0].save(buffer, format="PNG")
+                                    base64_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                                    contents.append({"type": "image", "data": base64_image, "mime_type": "image/png"})
+                                    continue
+                            except Exception:
+                                pass
+                        contents.append(f"[INFO] {file_path.name} ページ{page_num} を画像化できません")
+            return contents if len(contents) > 1 else contents[0]
         elif suffix in [".png", ".jpg", ".jpeg", ".gif"]:
             image_data = file_path.read_bytes()
             base64_image = base64.b64encode(image_data).decode("utf-8")
@@ -336,9 +358,13 @@ def process_samples(procedure: str, batch_path: Path, sample_format_keys: Dict[s
     for i, sample_dir in enumerate(sample_dirs):
         st.info(f"処理中: {sample_dir.name} ({i+1}/{total_samples})")
         
-        sample_contents = [
-            read_sample(p) for p in sorted(sample_dir.glob("*"))
-        ]
+        sample_contents = []
+        for p in sorted(sample_dir.glob("*")):
+            content = read_sample(p)
+            if isinstance(content, list):
+                sample_contents.extend(content)
+            else:
+                sample_contents.append(content)
 
         # LLMでテストを実行
         result_json = execute_audit_procedure(st.session_state.llm, procedure, sample_contents, sample_format_keys)
