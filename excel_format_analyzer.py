@@ -118,7 +118,43 @@ class ExcelFormatAnalyzer:
                 excel_file_path, format_data_dir
             )
 
-            # 反復的プロセスの実行
+            # "XXXX" と記載されたセルの検出
+            placeholder_fields = self._detect_xxxx_fields(excel_file_path)
+
+            if len(placeholder_fields) >= 3:
+                # --- 簡易処理 ---
+                structured_fields = self._estimate_fields_with_llm(
+                    extracted_text, original_capture, 1
+                )
+
+                existing = {f.cell_id for f in structured_fields.fields}
+                for pf in placeholder_fields:
+                    if pf.cell_id not in existing:
+                        structured_fields.fields.append(pf)
+
+                highlighted_excel = self._highlight_fields(
+                    excel_file_path, structured_fields, format_data_dir, 1
+                )
+                highlighted_captures = self._capture_highlighted_excel(
+                    highlighted_excel, format_data_dir, 1
+                )
+
+                result = self._save_final_result(
+                    structured_fields, format_data_dir, 1
+                )
+
+                return {
+                    "status": "success",
+                    "iterations": 1,
+                    "final_validation_status": "N/A",
+                    "fields": result["fields"],
+                    "common_fields": result["common_fields"],
+                    "sample_fields": result["sample_fields"],
+                    "format_json_path": result["format_json_path"],
+                    "highlighted_captures": highlighted_captures,
+                }
+
+            # --- 既存の反復処理 ---
             current_iteration = 1
             structured_fields = None
             validation_status = "修正が必要"
@@ -126,38 +162,44 @@ class ExcelFormatAnalyzer:
 
             while current_iteration <= self.max_iterations and validation_status != "OK":
                 logger.info(
-                    f"=== 反復 {current_iteration}/{self.max_iterations} 開始 ===")
+                    f"=== 反復 {current_iteration}/{self.max_iterations} 開始 ==="
+                )
 
-                # 2. LLMによる入力欄の推定（初回）または修正（2回目以降）
                 if current_iteration == 1:
                     structured_fields = self._estimate_fields_with_llm(
                         extracted_text, original_capture, current_iteration
                     )
                 else:
                     structured_fields = self._correct_fields_with_llm(
-                        extracted_text, original_capture, structured_fields,
-                        validation_result, current_iteration
+                        extracted_text,
+                        original_capture,
+                        structured_fields,
+                        validation_result,
+                        current_iteration,
                     )
 
-                # 3. 入力欄のハイライト
+                # 検出された"XXXX"セルを強制的に追加
+                existing = {f.cell_id for f in structured_fields.fields}
+                for pf in placeholder_fields:
+                    if pf.cell_id not in existing:
+                        structured_fields.fields.append(pf)
+
                 highlighted_excel = self._highlight_fields(
                     excel_file_path, structured_fields, format_data_dir, current_iteration
                 )
 
-                # 4. ハイライト済みExcelのキャプチャ
                 highlighted_captures = self._capture_highlighted_excel(
                     highlighted_excel, format_data_dir, current_iteration
                 )
 
-                # 5. LLMによる検証
                 validation_result, validation_status = self._validate_with_llm(
                     original_capture, highlighted_captures[0], current_iteration
                 )
 
                 logger.info(
-                    f"反復 {current_iteration} 検証結果: {validation_status}")
+                    f"反復 {current_iteration} 検証結果: {validation_status}"
+                )
 
-                # 検証結果の保存
                 self._save_iteration_result(
                     structured_fields, validation_result, format_data_dir, current_iteration
                 )
@@ -170,9 +212,9 @@ class ExcelFormatAnalyzer:
 
             if validation_status != "OK":
                 logger.warning(
-                    f"最大反復回数 {self.max_iterations} に達しました。最後の結果を使用します。")
+                    f"最大反復回数 {self.max_iterations} に達しました。最後の結果を使用します。"
+                )
 
-            # 6. 最終結果の保存
             result = self._save_final_result(
                 structured_fields, format_data_dir, current_iteration - 1
             )
@@ -185,7 +227,7 @@ class ExcelFormatAnalyzer:
                 "common_fields": result["common_fields"],
                 "sample_fields": result["sample_fields"],
                 "format_json_path": result["format_json_path"],
-                "highlighted_captures": highlighted_captures
+                "highlighted_captures": highlighted_captures,
             }
 
         except Exception as e:
@@ -299,11 +341,40 @@ class ExcelFormatAnalyzer:
                 return str(output_path)
             else:
                 logger.error(f"キャプチャファイルが生成されませんでした: {excel_file_path}")
-                return ""
+            return ""
 
         except Exception as e:
             logger.error(f"Excelキャプチャエラー: {str(e)}")
             return ""
+
+    def _detect_xxxx_fields(self, excel_file_path: str) -> List[ExcelField]:
+        """セルに 'XXXX' と記載されている箇所を入力欄として抽出"""
+        workbook = openpyxl.load_workbook(excel_file_path)
+        detected: List[ExcelField] = []
+        counter = 1
+        for sheet in workbook.worksheets:
+            for row in sheet.iter_rows():
+                for cell in row:
+                    value = cell.value
+                    if isinstance(value, str) and "XXXX" in value:
+                        # 左隣のセルから説明を推測
+                        desc = None
+                        if cell.col_idx > 1:
+                            left = sheet.cell(row=cell.row, column=cell.col_idx - 1).value
+                            if left and isinstance(left, str):
+                                desc = f"{left} を記入する欄"
+                        if not desc:
+                            desc = "入力欄"
+                        detected.append(
+                            ExcelField(
+                                cell_id=f"{cell.column_letter}{cell.row}",
+                                key_name=f"placeholder_{counter}",
+                                description=desc,
+                                field_type="common",
+                            )
+                        )
+                        counter += 1
+        return detected
 
     def _estimate_fields_with_llm(self, extracted_text: str, image_path: str, iteration: int) -> ExcelFormFields:
         """LLMによる入力欄の推定（初回）"""
