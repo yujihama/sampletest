@@ -16,7 +16,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.utils.exceptions import CellCoordinatesException
 from io import BytesIO
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_core.messages import HumanMessage
 import PyPDF2
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
@@ -43,6 +43,10 @@ TEMP_DIR = FORMAT_DIR / "temp"
 
 MODEL_NAME = "gpt-4.1"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2023-07-01-preview")
+AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", MODEL_NAME)
 
 # --------------------------------------------------------------------------------------
 # 構造化出力用モデル
@@ -60,6 +64,18 @@ class CommonFieldSummary(BaseModel):
 # --------------------------------------------------------------------------------------
 # ユーティリティ関数
 # --------------------------------------------------------------------------------------
+
+def create_chat_model() -> ChatOpenAI:
+    """OpenAI または Azure OpenAI のどちらかを初期化して返す"""
+    if AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY:
+        return AzureChatOpenAI(
+            api_key=AZURE_OPENAI_API_KEY,
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            openai_api_version=AZURE_OPENAI_API_VERSION,
+            azure_deployment=AZURE_OPENAI_DEPLOYMENT,
+            temperature=0,
+        )
+    return ChatOpenAI(model=MODEL_NAME, api_key=OPENAI_API_KEY, temperature=0)
 
 def list_batches():
     """data/batch 配下のバッチフォルダ名を取得"""
@@ -346,7 +362,7 @@ def main():
 
     # LLMの初期化
     if "llm" not in st.session_state:
-        st.session_state.llm = ChatOpenAI(model=MODEL_NAME, api_key=OPENAI_API_KEY, temperature=0)
+        st.session_state.llm = create_chat_model()
 
     # --- サイドバー ---
     with st.sidebar:
@@ -381,7 +397,14 @@ def main():
         # 1. レイアウト分析 (チェックボックスがONの場合のみ)
         if update_workpaper:
             with st.spinner("調書レイアウトを分析中です..."):
-                analyzer = ExcelFormatAnalyzer(model_name=MODEL_NAME, api_key=OPENAI_API_KEY)
+                analyzer = ExcelFormatAnalyzer(
+                    model_name=MODEL_NAME,
+                    api_key=OPENAI_API_KEY,
+                    azure_api_key=AZURE_OPENAI_API_KEY,
+                    azure_endpoint=AZURE_OPENAI_ENDPOINT,
+                    azure_deployment=AZURE_OPENAI_DEPLOYMENT,
+                    azure_api_version=AZURE_OPENAI_API_VERSION,
+                )
                 analysis_result = analyzer.analyze_format(str(template_path), output_dir=str(TEMP_DIR))
 
                 if analysis_result and analysis_result["status"] == "success":

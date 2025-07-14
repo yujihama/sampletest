@@ -12,7 +12,7 @@ from typing import Dict, List, Literal, Optional, TypedDict
 
 # LangChain関連のインポート
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from pydantic import BaseModel, Field
 
 # Excel操作関連のインポート
@@ -62,12 +62,30 @@ class FieldCorrection(BaseModel):
 class ExcelFormatAnalyzer:
     """調書レイアウト認識クラス"""
 
-    def __init__(self, model_name: str, api_key: str, max_iterations: int = 3):
+    def __init__(
+        self,
+        model_name: str,
+        api_key: str,
+        max_iterations: int = 3,
+        *,
+        azure_api_key: str | None = None,
+        azure_endpoint: str | None = None,
+        azure_deployment: str | None = None,
+        azure_api_version: str = "2023-07-01-preview",
+    ):
         self.max_iterations = max_iterations
-        self.llm = ChatOpenAI(
-            model=model_name,
-            api_key=api_key
-        )
+        if azure_endpoint and azure_api_key:
+            self.llm = AzureChatOpenAI(
+                api_key=azure_api_key,
+                azure_endpoint=azure_endpoint,
+                openai_api_version=azure_api_version,
+                azure_deployment=azure_deployment or model_name,
+            )
+        else:
+            self.llm = ChatOpenAI(
+                model=model_name,
+                api_key=api_key,
+            )
 
     def analyze_format(self, excel_file_path: str, output_dir: str = None) -> Dict:
         """
